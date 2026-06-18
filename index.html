@@ -44,10 +44,6 @@
             <span>Saved</span>
             <span id="bookmark-count" class="badge">0</span>
           </button>
-          
-          <button id="open-settings" class="action-btn circle-btn" title="AI Settings">
-            <i data-lucide="settings"></i>
-          </button>
         </div>
       </div>
     </header>
@@ -127,59 +123,7 @@
     </footer>
   </div>
 
-  <!-- Settings Modal (Gemini API Configuration) -->
-  <div class="modal-overlay hidden" id="settings-modal">
-    <div class="modal-card settings-card">
-      <div class="modal-header">
-        <div class="modal-title-wrapper">
-          <i data-lucide="brain-circuit" class="title-icon text-indigo"></i>
-          <h2>AI Settings & Personalization</h2>
-        </div>
-        <button class="close-modal-btn" id="close-settings">&times;</button>
-      </div>
-      
-      <div class="modal-body">
-        <p class="settings-desc">
-          BharatDigest summarizes articles client-side using a smart local NLP model. 
-          To unlock **live, high-fidelity AI summaries**, you can connect your own Google Gemini API key.
-        </p>
 
-        <div class="info-box-cyan">
-          <i data-lucide="shield-check"></i>
-          <div>
-            <strong>100% Client-Side & Secure:</strong> 
-            Your API key is stored locally in your browser's <code>localStorage</code>. It is never sent to any server other than Google's official Gemini API.
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="gemini-key">Google Gemini API Key</label>
-          <div class="input-wrapper">
-            <input type="password" id="gemini-key" placeholder="AIzaSy...">
-            <button type="button" id="toggle-key-visibility" class="visibility-btn">
-              <i data-lucide="eye"></i>
-            </button>
-          </div>
-          <span class="help-text">
-            Don't have a key? You can get a free-tier API key in 2 minutes from 
-            <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">Google AI Studio <i data-lucide="external-link" style="width:12px; height:12px; display:inline;"></i></a>.
-          </span>
-        </div>
-
-        <div class="status-indicator" id="key-status-indicator">
-          <!-- Populated by JS -->
-        </div>
-      </div>
-      
-      <div class="modal-footer">
-        <button class="secondary-btn" id="clear-settings-btn">Remove Key</button>
-        <div class="footer-actions">
-          <button class="secondary-btn" id="cancel-settings-btn">Cancel</button>
-          <button class="primary-btn" id="save-settings-btn">Save Configuration</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- Article Details & Summary Modal -->
   <div class="modal-overlay hidden" id="details-modal">
@@ -204,11 +148,6 @@
               <i data-lucide="sparkles" class="icon-sparkles"></i>
               <span id="summary-badge-text">Smart Summary</span>
             </div>
-            
-            <button id="regenerate-ai-summary" class="ai-button" title="Request full AI summary">
-              <i data-lucide="brain"></i>
-              <span>AI Summary</span>
-            </button>
           </div>
           
           <div class="summary-body">

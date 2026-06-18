@@ -9,9 +9,7 @@ Samachar India parses and aggregates live breaking news from leading Indian news
 
 - **📰 Diverse Indian News Channels:** Syncs feeds across categories: National/General, Business, Tech, Sports, and Entertainment.
 - **🛡️ CORS Proxy Fallback Chain:** Implements a multi-layer proxy mechanism to request and parse XML RSS feeds natively in the browser without CORS restrictions.
-- **🔮 Dual Summarization Engine:**
-  - **Smart Local Summarizer (Default):** Runs an extractive NLP algorithm using sentence-ranking by keyword frequency (removing common stopwords) to generate immediate takeaways locally.
-  - **Gemini AI Summarizer (Optional/Pre-configured):** Connects to Google's official Gemini API to construct high-fidelity summaries and key takeaways on demand using the **Gemini 2.5 Flash** model.
+- **🔮 Smart Local Summarizer:** Runs an extractive NLP algorithm using sentence-ranking by keyword frequency (filtering common stopwords) to generate instant bullet-point takeaways and text summaries locally in the browser with zero API keys or external dependencies.
 - **💾 Browser-Side Bookmarks:** Save important news stories and summaries using local browser storage (`localStorage`), allowing bookmarks to persist across refreshes.
 - **🔍 Quick Search & Category Filters:** Instantly filter cards by source, category, or search queries with high performance and fluid animations.
 - **🎨 Ultra-Premium UI/UX:**
@@ -62,13 +60,4 @@ Since Samachar India is a static client-side web application, hosting it on GitH
 3. **Launch:**
    - Within 1-2 minutes, GitHub will publish your page. You will see the URL displayed at the top of the Pages settings screen (e.g., `https://abhisdas.github.io/News-India/`).
 
----
 
-## ⚙️ AI Customization & Gemini Keys
-
-The application is pre-loaded with a Google Gemini API key to enable instant AI summaries out of the box. 
-
-If you or your users wish to use a custom API key:
-1. Click the **Gear Icon** in the header navigation.
-2. Input the Gemini API key.
-3. Click **Save Configuration** (the key is verified and stored securely in the local browser's `localStorage` and never leaves the client device).

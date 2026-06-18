@@ -205,7 +205,6 @@ const state = {
   searchQuery: '',       // Search string
   showSavedOnly: false,  // Toggle to show only saved items
   selectedArticle: null, // Currently active article in details modal
-  geminiKey: localStorage.getItem('gemini_api_key') || '',
   isFetching: false
 };
 
@@ -459,91 +458,7 @@ function generateLocalSummary(article) {
   };
 }
 
-// ==========================================================================
-// 6. Google Gemini AI Summarization Client
-// ==========================================================================
-async function generateGeminiSummary(article) {
-  if (!state.geminiKey) {
-    throw new Error("No Gemini API key configured. Please enter one in settings.");
-  }
 
-  const prompt = `Summarize the following Indian news article. Provide exactly 3 short, high-impact bullet points and a one-sentence summary paragraph. 
-  You MUST return your output strictly in JSON format matching this schema: 
-  {
-    "bullets": ["short bullet point 1", "short bullet point 2", "short bullet point 3"],
-    "text": "one sentence summary paragraph summarizing the narrative."
-  }
-  
-  Do not include any markdown format tags like \`\`\`json or surrounding text. Just return the clean JSON string.
-  
-  Article Title: ${article.title}
-  Article Publisher: ${article.source}
-  Article Snippet: ${article.content || article.description}`;
-
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${state.geminiKey}`;
-
-  const response = await fetch(apiUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{ text: prompt }]
-      }],
-      generationConfig: {
-        responseMimeType: "application/json"
-      }
-    })
-  });
-
-  if (!response.ok) {
-    const errData = await response.json();
-    throw new Error(errData?.error?.message || "Gemini API request failed.");
-  }
-
-  const data = await response.json();
-  const rawResponseText = data.candidates[0].content.parts[0].text;
-  
-  // Parse structured JSON response
-  try {
-    const summaryData = JSON.parse(rawResponseText.trim());
-    if (summaryData.bullets && Array.isArray(summaryData.bullets) && summaryData.text) {
-      return summaryData;
-    }
-    throw new Error("Response structure did not match expected bullets format.");
-  } catch (e) {
-    console.error("Failed to parse JSON response from Gemini, using simple text wrapper:", rawResponseText);
-    // Fallback parser if JSON failed but response was textual
-    const points = rawResponseText.split('\n')
-      .map(p => p.replace(/^[-*•]\s+/, '').trim())
-      .filter(p => p.length > 0);
-    return {
-      bullets: points.slice(0, 3),
-      text: points.slice(3).join(" ") || article.description
-    };
-  }
-}
-
-// Validate Gemini API Key on Configuration Save
-async function validateGeminiKey(key) {
-  const prompt = "Reply with 'Ok'.";
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
-
-  const response = await fetch(apiUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{ text: prompt }]
-      }]
-    })
-  });
-
-  return response.ok;
-}
 
 // ==========================================================================
 // 7. UI Rendering & Interactions
@@ -704,7 +619,6 @@ function openDetailsModal(article) {
   const pubDate = document.getElementById("modal-pub-date");
   const contentText = document.getElementById("modal-content-text");
   const sourceLink = document.getElementById("modal-source-link");
-  const regenButton = document.getElementById("regenerate-ai-summary");
   const badgeText = document.getElementById("summary-badge-text");
 
   // Load basic article metadata
@@ -719,17 +633,8 @@ function openDetailsModal(article) {
 
   // Set default Local Summary UI
   const localSummary = generateLocalSummary(article);
-  badgeText.innerText = "Smart Summary (Local)";
+  badgeText.innerText = "Smart Summary";
   displaySummary(localSummary);
-  
-  // Manage AI Summary trigger
-  if (state.geminiKey) {
-    regenButton.querySelector("span").innerText = "AI Summary";
-    regenButton.style.display = "flex";
-  } else {
-    regenButton.querySelector("span").innerText = "Unlock AI";
-    regenButton.style.display = "flex";
-  }
 
   // Display details modal
   modal.classList.remove("hidden");
@@ -754,47 +659,10 @@ function displaySummary(summaryObj) {
 
 // Close Modals helper
 function closeAllModals() {
-  document.getElementById("details-modal").classList.add("hidden");
-  document.getElementById("settings-modal").classList.add("hidden");
+  const detailsModal = document.getElementById("details-modal");
+  if (detailsModal) detailsModal.classList.add("hidden");
   document.body.style.overflow = "auto";
   state.selectedArticle = null;
-}
-
-// Request AI Summary
-async function triggerAiSummary() {
-  const regenButton = document.getElementById("regenerate-ai-summary");
-  const badgeText = document.getElementById("summary-badge-text");
-  
-  if (!state.geminiKey) {
-    // Redirect user to Settings modal to enter API key
-    closeAllModals();
-    document.getElementById("settings-modal").classList.remove("hidden");
-    document.body.style.overflow = "hidden";
-    
-    const statusEl = document.getElementById("key-status-indicator");
-    statusEl.className = "status-indicator error";
-    statusEl.innerText = "Please input a Gemini API Key to enable AI summarizing.";
-    return;
-  }
-
-  // Show loading state
-  regenButton.disabled = true;
-  regenButton.innerHTML = `<i data-lucide="sparkles" class="loading-spin" style="animation: spin 1s linear infinite;"></i> <span>Generating...</span>`;
-  lucide.createIcons();
-  
-  try {
-    const aiSummary = await generateGeminiSummary(state.selectedArticle);
-    badgeText.innerText = "Gemini AI Summary";
-    displaySummary(aiSummary);
-  } catch (err) {
-    console.error("AI Summary failed: ", err);
-    alert("AI Summarization failed: " + err.message + "\nFalling back to Smart Local Summary.");
-  } finally {
-    // Restore button
-    regenButton.disabled = false;
-    regenButton.innerHTML = `<i data-lucide="brain"></i> <span>AI Summary</span>`;
-    lucide.createIcons();
-  }
 }
 
 // ==========================================================================
@@ -879,8 +747,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Modal Closures
   document.getElementById("close-details").addEventListener("click", closeAllModals);
-  document.getElementById("close-settings").addEventListener("click", closeAllModals);
-  document.getElementById("cancel-settings-btn").addEventListener("click", closeAllModals);
   
   // Clicking overlay closes active modals
   document.querySelectorAll(".modal-overlay").forEach(overlay => {
@@ -896,84 +762,5 @@ document.addEventListener("DOMContentLoaded", () => {
     if (state.selectedArticle) {
       toggleBookmark(state.selectedArticle.id);
     }
-  });
-
-  // Trigger Gemini AI Summary in Modal
-  document.getElementById("regenerate-ai-summary").addEventListener("click", triggerAiSummary);
-
-  // Settings Actions
-  const settingsModal = document.getElementById("settings-modal");
-  const keyInput = document.getElementById("gemini-key");
-  const saveKeyBtn = document.getElementById("save-settings-btn");
-  const clearKeyBtn = document.getElementById("clear-settings-btn");
-  const keyStatusEl = document.getElementById("key-status-indicator");
-  const toggleKeyVisibilityBtn = document.getElementById("toggle-key-visibility");
-
-  // Show settings
-  document.getElementById("open-settings").addEventListener("click", () => {
-    keyInput.value = state.geminiKey;
-    keyStatusEl.className = "status-indicator";
-    keyStatusEl.style.display = "none";
-    settingsModal.classList.remove("hidden");
-    document.body.style.overflow = "hidden";
-  });
-
-  // Hide/Show password letters
-  toggleKeyVisibilityBtn.addEventListener("click", () => {
-    const isPass = keyInput.type === "password";
-    keyInput.type = isPass ? "text" : "password";
-    toggleKeyVisibilityBtn.querySelector("i").setAttribute("data-lucide", isPass ? "eye-off" : "eye");
-    lucide.createIcons();
-  });
-
-  // Save Settings configuration
-  saveKeyBtn.addEventListener("click", async () => {
-    const key = keyInput.value.trim();
-    if (!key) {
-      keyStatusEl.className = "status-indicator error";
-      keyStatusEl.innerText = "Please input a valid key or press Cancel.";
-      return;
-    }
-
-    keyStatusEl.className = "status-indicator";
-    keyStatusEl.innerText = "Verifying API key connectivity with Google...";
-    keyStatusEl.style.display = "block";
-    saveKeyBtn.disabled = true;
-
-    try {
-      const isValid = await validateGeminiKey(key);
-      if (isValid) {
-        state.geminiKey = key;
-        localStorage.setItem('gemini_api_key', key);
-        keyStatusEl.className = "status-indicator success";
-        keyStatusEl.innerText = "Key successfully verified and saved!";
-        
-        // Wait and close
-        setTimeout(() => {
-          closeAllModals();
-        }, 1200);
-      } else {
-        keyStatusEl.className = "status-indicator error";
-        keyStatusEl.innerText = "Verification failed. Check the key details and try again.";
-      }
-    } catch (e) {
-      keyStatusEl.className = "status-indicator error";
-      keyStatusEl.innerText = "Connection error: " + e.message;
-    } finally {
-      saveKeyBtn.disabled = false;
-    }
-  });
-
-  // Clear Saved Configuration Settings
-  clearKeyBtn.addEventListener("click", () => {
-    state.geminiKey = "";
-    localStorage.removeItem('gemini_api_key');
-    keyInput.value = "";
-    keyStatusEl.className = "status-indicator success";
-    keyStatusEl.innerText = "Configuration cleared successfully.";
-    
-    setTimeout(() => {
-      closeAllModals();
-    }, 1000);
   });
 });
